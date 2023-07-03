@@ -15,7 +15,7 @@ def search():
     req_data = request.get_json()
     target = req_data['target']
 
-    # Perform the search based on the target (label)
+    # Perform the search based on the target (topic)
     results = search_repositories(target)
 
     # Return the search results in the expected format
@@ -34,8 +34,8 @@ def query():
     req_data = request.get_json()
     target = req_data['targets'][0]['target']
 
-    # Perform the query based on the target (label)
-    count = get_repositories_with_label(target)
+    # Perform the query based on the target (topic)
+    count = get_repositories_with_topic(target)
 
     # Return the query result in the expected format
     response = [
@@ -58,11 +58,11 @@ def annotations():
     annotations = []
     for annotation in req_data:
         target = annotation['target']
-        count = get_repositories_with_label(target)
+        count = get_repositories_with_topic(target)
         annotations.append({
             'annotation': annotation['annotation'],
             'time': annotation['time'],
-            'title': f'Repositories with label "{target}"',
+            'title': f'Repositories with topic "{target}"',
             'text': f'Total count: {count}'
         })
 
@@ -70,14 +70,14 @@ def annotations():
     return jsonify(annotations)
 
 
-def search_repositories(label):
-    # Perform the search operation based on the label
+def search_repositories(topic):
+    # Perform the search operation based on the topic
     # Customize this logic as per your requirements
     headers = {
         'Authorization': f'Token {GITHUB_TOKEN}'
     }
     params = {
-        'q': f'org:{ORGANIZATION} label:"{label}"'
+        'q': f'org:{ORGANIZATION} topic:"{topic}"'
     }
     url = f'{GITHUB_API_BASE_URL}/search/repositories'
     response = requests.get(url, headers=headers, params=params)
@@ -86,14 +86,14 @@ def search_repositories(label):
     return repositories
 
 
-def get_repositories_with_label(label):
-    # Get the count of repositories with the specified label
+def get_repositories_with_topic(topic):
+    # Get the count of repositories with the specified topic
     # Customize this logic as per your requirements
     headers = {
         'Authorization': f'Token {GITHUB_TOKEN}'
     }
     params = {
-        'q': f'org:{ORGANIZATION} label:"{label}"'
+        'q': f'org:{ORGANIZATION} topic:"{topic}"'
     }
     url = f'{GITHUB_API_BASE_URL}/search/repositories'
     response = requests.get(url, headers=headers, params=params)
