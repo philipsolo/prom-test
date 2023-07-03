@@ -42,6 +42,20 @@ def query():
     return jsonify(response)
 
 
+@app.route('/annotations', methods=['POST'])
+def annotations():
+    # Parse the annotations request from Grafana
+    req_data = request.get_json()
+
+    # Perform the annotations operation
+    annotations = []
+    # Customize this logic as per your requirements
+    # You can retrieve and process annotations from the GitHub API or any other data source
+
+    # Return the annotations in the expected format
+    return jsonify(annotations)
+
+
 def search_repositories(label):
     # Perform the search operation based on the label
     # Customize this logic as per your requirements
