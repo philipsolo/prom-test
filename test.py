@@ -38,7 +38,14 @@ def query():
     count = get_repositories_with_label(target)
 
     # Return the query result in the expected format
-    response = [[1, count]]  # Assuming a single timestamp with the count as the value
+    response = [
+        {
+            'target': target,
+            'datapoints': [
+                [count, int(time.time()) * 1000]  # Assuming current timestamp with the count as the value
+            ]
+        }
+    ]
     return jsonify(response)
 
 
@@ -49,8 +56,15 @@ def annotations():
 
     # Perform the annotations operation
     annotations = []
-    # Customize this logic as per your requirements
-    # You can retrieve and process annotations from the GitHub API or any other data source
+    for annotation in req_data:
+        target = annotation['target']
+        count = get_repositories_with_label(target)
+        annotations.append({
+            'annotation': annotation['annotation'],
+            'time': annotation['time'],
+            'title': f'Repositories with label "{target}"',
+            'text': f'Total count: {count}'
+        })
 
     # Return the annotations in the expected format
     return jsonify(annotations)
