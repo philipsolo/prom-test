@@ -124,7 +124,7 @@ while True:
     # Make the GraphQL query to fetch repositories under the topic with pagination
     query = '''
     query ($topic: String!, $per_page: Int!, $after_cursor: String) {
-      search(query: "topic:$topic type:REPOSITORY", type: REPOSITORY, first: $per_page, after: $after_cursor) {
+      search(query: "topic:{0} type:REPOSITORY", type: REPOSITORY, first: $per_page, after: $after_cursor) {
         pageInfo {
           hasNextPage
           endCursor
@@ -157,7 +157,7 @@ while True:
         }
       }
     }
-    '''
+    '''.format(topic)
 
     # Set the GraphQL API endpoint
     url = 'https://api.github.com/graphql'
@@ -191,6 +191,20 @@ while True:
 
 # Process the retrieved repositories
 for repo in repositories:
+    repo_name = repo['node']['name']
+    commit = repo['node']['defaultBranchRef']['target']['history']['edges'][0]['node']
+    commit_oid = commit['oid']
+    commit_message = commit['message']
+    commit_date = commit['committedDate']
+    commit_author = commit['author']['name']
+
+    print('Repository:', repo_name)
+    print('Last Commit:')
+    print('  - Commit ID:', commit_oid)
+    print('  - Message:', commit_message)
+    print('  - Date:', commit_date)
+    print('  - Author:', commit_author)
+    print('---')
 
 if __name__ == '__main__':
     app.run()
