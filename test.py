@@ -102,5 +102,20 @@ def get_repositories_with_topic(topic):
     return count
 
 
+import re
+
+proxy_name = "company_context_12345_version"
+pattern = r"^([a-zA-Z]+)_\w+_(\d+)_\w+$"
+
+match = re.match(pattern, proxy_name)
+if match:
+    company = match.group(1)
+    idnumber = match.group(2)
+
+    print("Company:", company)
+    print("ID Number:", idnumber)
+else:
+    print("No match found")
+
 if __name__ == '__main__':
     app.run()
