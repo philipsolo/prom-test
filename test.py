@@ -207,5 +207,39 @@ for repo in repositories:
     print('---')
 
 
+from prometheus_client import start_http_server, Gauge, Counter, Histogram
+
+# Define Prometheus metrics
+repository_count = Gauge('repository_count', 'Total number of repositories')
+commit_count = Counter('commit_count', 'Total number of commits')
+commit_date_histogram = Histogram('commit_date', 'Distribution of commit dates')
+
+# Process the retrieved repositories
+for repo in repositories:
+    repo_name = repo['node']['name']
+    commit = repo['node']['defaultBranchRef']['target']['history']['edges'][0]['node']
+    commit_oid = commit['oid']
+    commit_message = commit['message']
+    commit_date = commit['committedDate']
+    commit_author = commit['author']['name']
+
+    # Update metrics
+    repository_count.inc()  # Increment the repository count by 1
+    commit_count.inc()  # Increment the commit count by 1
+    commit_date_histogram.observe(commit_date)  # Add the commit date to the histogram
+
+    # Additional processing and logging
+    print('Repository:', repo_name)
+    print('Last Commit:')
+    print('  - Commit ID:', commit_oid)
+    print('  - Message:', commit_message)
+    print('  - Date:', commit_date)
+    print('  - Author:', commit_author)
+    print('---')
+
+# Start the Prometheus HTTP server
+start_http_server(8000)
+
+
 if __name__ == '__main__':
     app.run()
