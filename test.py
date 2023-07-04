@@ -102,20 +102,77 @@ def get_repositories_with_topic(topic):
     return count
 
 
-import re
+import requests
 
-proxy_name = "company_context_12345_version"
-pattern = r"^([a-zA-Z]+)_\w+_(\d+)_\w+$"
+# Set your GitHub personal access token
+access_token = '<YOUR_ACCESS_TOKEN>'
 
-match = re.match(pattern, proxy_name)
-if match:
-    company = match.group(1)
-    idnumber = match.group(2)
+# Set the specific topic you want to query
+topic = '<TOPIC>'
 
-    print("Company:", company)
-    print("ID Number:", idnumber)
-else:
-    print("No match found")
+# Make the GraphQL query to fetch repositories under the topic
+query = '''
+{
+  search(query: "topic:{}", type: REPOSITORY, first: 100) {
+    edges {
+      node {
+        ... on Repository {
+          name
+          defaultBranchRef {
+            name
+            target {
+              ... on Commit {
+                history(first: 1) {
+                  edges {
+                    node {
+                      oid
+                      message
+                      committedDate
+                      author {
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+'''.format(topic)
+
+# Set the GraphQL API endpoint
+url = 'https://api.github.com/graphql'
+
+# Set the request headers with the access token
+headers = {'Authorization': f'token {access_token}'}
+
+# Send the GraphQL request
+response = requests.post(url, json={'query': query}, headers=headers)
+
+# Parse the response JSON
+data = response.json()
+
+# Extract the repository and commit information
+repositories = data['data']['search']['edges']
+for repo in repositories:
+    repo_name = repo['node']['name']
+    commit = repo['node']['defaultBranchRef']['target']['history']['edges'][0]['node']
+    commit_oid = commit['oid']
+    commit_message = commit['message']
+    commit_date = commit['committedDate']
+    commit_author = commit['author']['name']
+
+    print('Repository:', repo_name)
+    print('Last Commit:')
+    print('  - Commit ID:', commit_oid)
+    print('  - Message:', commit_message)
+    print('  - Date:', commit_date)
+    print('  - Author:', commit_author)
+    print('---')
 
 if __name__ == '__main__':
     app.run()
