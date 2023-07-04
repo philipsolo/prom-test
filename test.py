@@ -110,54 +110,79 @@ access_token = '<YOUR_ACCESS_TOKEN>'
 # Set the specific topic you want to query
 topic = '<TOPIC>'
 
-# Make the GraphQL query to fetch repositories under the topic
-query = '''
-{
-  search(query: "topic:{}", type: REPOSITORY, first: 100) {
-    edges {
-      node {
-        ... on Repository {
-          name
-          defaultBranchRef {
-            name
-            target {
-              ... on Commit {
-                history(first: 1) {
-                  edges {
-                    node {
-                      oid
-                      message
-                      committedDate
-                      author {
-                        name
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-'''.format(topic)
+# Set the maximum number of repositories to retrieve per request
+per_page = 100
 
-# Set the GraphQL API endpoint
-url = 'https://api.github.com/graphql'
+# Set the initial cursor to start with
+cursor = ''
 
-# Set the request headers with the access token
-headers = {'Authorization': f'token {access_token}'}
+# Initialize an empty list to store all repositories
+repositories = []
 
-# Send the GraphQL request
-response = requests.post(url, json={'query': query}, headers=headers)
+# Continue making requests until all repositories are retrieved
+while True:
+    # Make the GraphQL query to fetch repositories under the topic with pagination
+    query = f'''
+    {{
+      search(query: "topic:{topic} type:REPOSITORY", type: REPOSITORY, first: {per_page}, after: "{cursor}") {{
+        pageInfo {{
+          endCursor
+          hasNextPage
+        }}
+        edges {{
+          node {{
+            ... on Repository {{
+              name
+              defaultBranchRef {{
+                name
+                target {{
+                  ... on Commit {{
+                    history(first: 1) {{
+                      edges {{
+                        node {{
+                          oid
+                          message
+                          committedDate
+                          author {{
+                            name
+                          }}
+                        }}
+                      }}
+                    }}
+                  }}
+                }}
+              }}
+            }}
+          }}
+        }}
+      }}
+    }}
+    '''
 
-# Parse the response JSON
-data = response.json()
+    # Set the GraphQL API endpoint
+    url = 'https://api.github.com/graphql'
 
-# Extract the repository and commit information
-repositories = data['data']['search']['edges']
+    # Set the request headers with the access token
+    headers = {'Authorization': f'token {access_token}'}
+
+    # Send the GraphQL request
+    response = requests.post(url, json={'query': query}, headers=headers)
+
+    # Parse the response JSON
+    data = response.json()
+
+    # Extract the repositories from the response
+    repositories += data['data']['search']['edges']
+
+    # Check if there are more pages to retrieve
+    has_next_page = data['data']['search']['pageInfo']['hasNextPage']
+    if not has_next_page:
+        break
+
+    # Set the cursor for the next page
+    cursor = data['data']['search']['pageInfo']['endCursor']
+
+# Process the retrieved repositories
 for repo in repositories:
     repo_name = repo['node']['name']
     commit = repo['node']['defaultBranchRef']['target']['history']['edges'][0]['node']
@@ -173,6 +198,7 @@ for repo in repositories:
     print('  - Date:', commit_date)
     print('  - Author:', commit_author)
     print('---')
+
 
 if __name__ == '__main__':
     app.run()
