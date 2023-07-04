@@ -113,50 +113,50 @@ topic = '<TOPIC>'
 # Set the maximum number of repositories to retrieve per request
 per_page = 100
 
-# Set the initial cursor to start with
-cursor = ''
-
 # Initialize an empty list to store all repositories
 repositories = []
+
+# Set the initial `after` cursor to start with as `None`
+after_cursor = None
 
 # Continue making requests until all repositories are retrieved
 while True:
     # Make the GraphQL query to fetch repositories under the topic with pagination
-    query = f'''
-    {{
-      search(query: "topic:{topic} type:REPOSITORY", type: REPOSITORY, first: {per_page}, after: "{cursor}") {{
-        pageInfo {{
-          endCursor
+    query = '''
+    query ($topic: String!, $per_page: Int!, $after_cursor: String) {
+      search(query: "topic:$topic type:REPOSITORY", type: REPOSITORY, first: $per_page, after: $after_cursor) {
+        pageInfo {
           hasNextPage
-        }}
-        edges {{
-          node {{
-            ... on Repository {{
+          endCursor
+        }
+        edges {
+          node {
+            ... on Repository {
               name
-              defaultBranchRef {{
+              defaultBranchRef {
                 name
-                target {{
-                  ... on Commit {{
-                    history(first: 1) {{
-                      edges {{
-                        node {{
+                target {
+                  ... on Commit {
+                    history(first: 1) {
+                      edges {
+                        node {
                           oid
                           message
                           committedDate
-                          author {{
+                          author {
                             name
-                          }}
-                        }}
-                      }}
-                    }}
-                  }}
-                }}
-              }}
-            }}
-          }}
-        }}
-      }}
-    }}
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
     '''
 
     # Set the GraphQL API endpoint
@@ -165,8 +165,15 @@ while True:
     # Set the request headers with the access token
     headers = {'Authorization': f'token {access_token}'}
 
+    # Set the variables for the GraphQL query
+    variables = {
+        'topic': topic,
+        'per_page': per_page,
+        'after_cursor': after_cursor
+    }
+
     # Send the GraphQL request
-    response = requests.post(url, json={'query': query}, headers=headers)
+    response = requests.post(url, json={'query': query, 'variables': variables}, headers=headers)
 
     # Parse the response JSON
     data = response.json()
@@ -179,26 +186,11 @@ while True:
     if not has_next_page:
         break
 
-    # Set the cursor for the next page
-    cursor = data['data']['search']['pageInfo']['endCursor']
+    # Set the `after` cursor for the next page
+    after_cursor = data['data']['search']['pageInfo']['endCursor']
 
 # Process the retrieved repositories
 for repo in repositories:
-    repo_name = repo['node']['name']
-    commit = repo['node']['defaultBranchRef']['target']['history']['edges'][0]['node']
-    commit_oid = commit['oid']
-    commit_message = commit['message']
-    commit_date = commit['committedDate']
-    commit_author = commit['author']['name']
-
-    print('Repository:', repo_name)
-    print('Last Commit:')
-    print('  - Commit ID:', commit_oid)
-    print('  - Message:', commit_message)
-    print('  - Date:', commit_date)
-    print('  - Author:', commit_author)
-    print('---')
-
 
 if __name__ == '__main__':
     app.run()
