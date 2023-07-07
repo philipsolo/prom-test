@@ -123,28 +123,37 @@ after_cursor = None
 while True:
     # Make the GraphQL query to fetch repositories under the topic with pagination
     query = '''
-    query ($topic: String!, $per_page: Int!, $after_cursor: String) {
-      search(query: $topic, type: REPOSITORY, first: $per_page, after: $after_cursor) {
-        pageInfo {
-          hasNextPage
-          endCursor
-        }
-        edges {
-          node {
-            ... on Repository {
-              name
-              defaultBranchRef {
-                name
-                target {
-                  ... on Commit {
-                    history(first: 1) {
-                      edges {
-                        node {
-                          oid
-                          message
-                          committedDate
-                          author {
-                            name
+query ($topic: String!, $per_page: Int!, $after_cursor: String) {
+  search(query: $topic, type: REPOSITORY, first: $per_page, after: $after_cursor) {
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    edges {
+      node {
+        ... on Repository {
+          name
+          defaultBranchRef {
+            name
+            target {
+              ... on Commit {
+                history(first: 1) {
+                  edges {
+                    node {
+                      oid
+                      message
+                      committedDate
+                      author {
+                        name
+                      }
+                      tree {
+                        entries {
+                          name
+                          type
+                          object {
+                            ... on Blob {
+                              oid
+                            }
                           }
                         }
                       }
@@ -157,6 +166,9 @@ while True:
         }
       }
     }
+  }
+}
+
     '''
 
     # Set the GraphQL API endpoint
