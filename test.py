@@ -123,7 +123,7 @@ after_cursor = None
 while True:
     # Make the GraphQL query to fetch repositories under the topic with pagination
     query = '''
-query ($topic: String!, $per_page: Int!, $after_cursor: String, $owner: String!, $repo: String!, $folderPath: String!) {
+query ($topic: String!, $label: String!, $per_page: Int!, $after_cursor: String, $folderPath: String!) {
   search(query: $topic, type: REPOSITORY, first: $per_page, after: $after_cursor) {
     pageInfo {
       hasNextPage
@@ -146,8 +146,8 @@ query ($topic: String!, $per_page: Int!, $after_cursor: String, $owner: String!,
                       author {
                         name
                       }
-                      tree {
-                        entries(path: $folderPath) {
+                      tree(path: $folderPath) {
+                        entries {
                           name
                           type
                           object {
