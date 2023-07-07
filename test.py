@@ -146,18 +146,20 @@ query ($topic: String!, $label: String!, $per_page: Int!, $after_cursor: String,
                       author {
                         name
                       }
-                      tree(path: $folderPath) {
-                        entries {
-                          name
-                          type
-                          object {
-                            ... on Blob {
-                              oid
-                            }
-                          }
-                        }
-                      }
                     }
+                  }
+                }
+              }
+            }
+          }
+          object(expression: $folderPath) {
+            ... on Tree {
+              entries {
+                name
+                type
+                object {
+                  ... on Blob {
+                    oid
                   }
                 }
               }
