@@ -255,5 +255,39 @@ for repo in repositories:
 start_http_server(8000)
 
 
+import redis
+import redis_fts
+
+# Create a Redis connection object.
+r = redis.StrictRedis(host='localhost', port=6379)
+
+# Define a schema for the credentials data.
+schema = {
+    'client_id': {'type': 'string'},
+    'devName': {'type': 'string'},
+    'URIs': {'type': 'list'}
+}
+
+# Create a full-text index using the schema.
+r.ft.create_index('credentials', schema=schema)
+
+# Add the credentials data to the full-text index.
+credentials = [
+    {'client_id': '1234567890', 'devName': 'John Doe', 'URIs': ['/test/123', '/test2/**']},
+    {'client_id': '9876543210', 'devName': 'Jane Doe', 'URIs': ['/test3/456', '/test4/**']}
+]
+
+for credential in credentials:
+    r.ft.add('credentials', credential)
+
+# Search the full-text index using the schema.
+# Search for credentials with the dev name "John Doe".
+query = 'devName:John Doe'
+results = r.ft.search('credentials', query, schema=schema)
+
+# Print the results.
+for result in results:
+    print(result)
+
 if __name__ == '__main__':
     app.run()
