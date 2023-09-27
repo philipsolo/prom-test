@@ -254,40 +254,71 @@ for repo in repositories:
 # Start the Prometheus HTTP server
 start_http_server(8000)
 
-
 import redis
-import redis_fts
 
-# Create a Redis connection object.
-r = redis.StrictRedis(host='localhost', port=6379)
+# Connect to Redis
+r = redis.Redis(host='localhost', port=6379, db=0)
 
-# Define a schema for the credentials data.
-schema = {
-    'client_id': {'type': 'string'},
-    'devName': {'type': 'string'},
-    'URIs': {'type': 'list'}
-}
+def add_credentials(credentials_list):
+    for credential in credentials_list:
+        # Generate a unique identifier for the credential
+        credential_id = f'credential:{credential["client_id"]}'
+        
+        # Store the credential as a Redis Hash
+        r.hmset(credential_id, credential)
 
-# Create a full-text index using the schema.
-r.ft.create_index('credentials', schema=schema)
+        # Create indexes for client_id, devName, and URIs
+        r.sadd(f'index:client_id:{credential["client_id"]}', credential_id)
+        r.sadd(f'index:devName:{credential["devName"]}', credential_id)
+        for uri in credential['URIs']:
+            r.sadd(f'index:URI:{uri}', credential_id)
 
-# Add the credentials data to the full-text index.
-credentials = [
-    {'client_id': '1234567890', 'devName': 'John Doe', 'URIs': ['/test/123', '/test2/**']},
-    {'client_id': '9876543210', 'devName': 'Jane Doe', 'URIs': ['/test3/456', '/test4/**']}
+def get_credentials_by_client_id(client_id):
+    credential_ids = r.smembers(f'index:client_id:{client_id}')
+    credentials = []
+    for credential_id in credential_ids:
+        credentials.append(r.hgetall(credential_id))
+    return credentials
+
+def get_credentials_by_dev_name(dev_name):
+    credential_ids = r.smembers(f'index:devName:{dev_name}')
+    credentials = []
+    for credential_id in credential_ids:
+        credentials.append(r.hgetall(credential_id))
+    return credentials
+
+def get_credentials_by_uri(uri):
+    credential_ids = r.smembers(f'index:URI:{uri}')
+    credentials = []
+    for credential_id in credential_ids:
+        credentials.append(r.hgetall(credential_id))
+    return credentials
+credentials_list = [
+    {
+        'client_id': 'client1',
+        'devName': 'developer1',
+        'URIs': ['/test/123', '/test2/**'],
+        # Other fields as needed
+    },
+    {
+        'client_id': 'client2',
+        'devName': 'developer2',
+        'URIs': ['/test/456'],
+        # Other fields as needed
+    },
+    # Add more credentials as needed
 ]
 
-for credential in credentials:
-    r.ft.add('credentials', credential)
+add_credentials(credentials_list)
+# Query credentials by client_id
+client1_credentials = get_credentials_by_client_id('client1')
 
-# Search the full-text index using the schema.
-# Search for credentials with the dev name "John Doe".
-query = 'devName:John Doe'
-results = r.ft.search('credentials', query, schema=schema)
+# Query credentials by devName
+developer1_credentials = get_credentials_by_dev_name('developer1')
 
-# Print the results.
-for result in results:
-    print(result)
+# Query credentials by URI
+uri_credentials = get_credentials_by_uri('/test/123')
+
 
 if __name__ == '__main__':
     app.run()
