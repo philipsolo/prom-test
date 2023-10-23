@@ -312,7 +312,7 @@ token = "YOUR_PERSONAL_ACCESS_TOKEN"
 username = "USERNAME"
 
 # GraphQL query to fetch repositories where the user is a collaborator and their topics
-collaborator_query = """
+query = """
 {
   user(login: "%s") {
     repositories(first: 100) {
@@ -328,12 +328,20 @@ collaborator_query = """
             }
           }
         }
+        labels(query: "%s", first: 1) {
+          nodes {
+            name
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
       }
     }
   }
 }
-""" % username
-
+""" % (username, label)
 # Define the GitHub GraphQL API URL
 api_url = "https://api.github.com/graphql"
 
