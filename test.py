@@ -302,5 +302,63 @@ if response.status_code == 200:
 else:
     raise Exception("Failed to fetch repos: {}".format(response.status_code))
 
+import requests
+import json
+
+# Your GitHub personal access token
+token = "YOUR_PERSONAL_ACCESS_TOKEN"
+
+# The username of the user whose repositories you want to fetch
+username = "USERNAME"
+
+# GraphQL query to fetch repositories where the user is a collaborator and their topics
+query = """
+{
+  user(login: "%s") {
+    repositoriesCollaboratedTo(first: 100) {
+      nodes {
+        name
+        owner {
+          login
+        }
+        repositoryTopics(first: 10) {
+          nodes {
+            topic {
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}
+""" % username
+
+# Define the GitHub GraphQL API URL
+api_url = "https://api.github.com/graphql"
+
+# Create a headers dictionary with your token
+headers = {
+    "Authorization": "Bearer " + token
+}
+
+# Send the POST request with the query
+response = requests.post(api_url, json={'query': query}, headers=headers)
+
+# Check for a successful response
+if response.status_code == 200:
+    data = response.json()
+    repositories = data["data"]["user"]["repositoriesCollaboratedTo"]["nodes"]
+    for repo in repositories:
+        owner = repo["owner"]["login"]
+        repo_name = repo["name"]
+        topics = [topic["topic"]["name"] for topic in repo["repositoryTopics"]["nodes"]]
+        print(f"Repository: {owner}/{repo_name}")
+        print("Topics:", ', '.join(topics) if topics else "No topics")
+else:
+    print("Error: Unable to fetch repositories")
+
+
+
 if __name__ == '__main__':
     app.run()
