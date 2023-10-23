@@ -315,7 +315,7 @@ username = "USERNAME"
 query = """
 {
   user(login: "%s") {
-    repositoriesCollaboratedTo(first: 100) {
+    repositories(first: 100, isCollaborator: true) {
       nodes {
         name
         owner {
