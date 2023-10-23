@@ -312,21 +312,19 @@ token = "YOUR_PERSONAL_ACCESS_TOKEN"
 username = "USERNAME"
 
 # GraphQL query to fetch repositories where the user is a collaborator and their topics
-query = """
+collaborator_query = """
 {
   user(login: "%s") {
-    repositoriesContributedTo(first: 100, contributionTypes: [COLLABORATOR]) {
-      edges {
-        node {
-          name
-          owner {
-            login
-          }
-          repositoryTopics(first: 10) {
-            nodes {
-              topic {
-                name
-              }
+    repositories(first: 100) {
+      nodes {
+        name
+        owner {
+          login
+        }
+        repositoryTopics(first: 10) {
+          nodes {
+            topic {
+              name
             }
           }
         }
