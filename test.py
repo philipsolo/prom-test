@@ -315,16 +315,18 @@ username = "USERNAME"
 query = """
 {
   user(login: "%s") {
-    repositories(first: 100, isCollaborator: true) {
-      nodes {
-        name
-        owner {
-          login
-        }
-        repositoryTopics(first: 10) {
-          nodes {
-            topic {
-              name
+    repositoriesContributedTo(first: 100, contributionTypes: [COLLABORATOR]) {
+      edges {
+        node {
+          name
+          owner {
+            login
+          }
+          repositoryTopics(first: 10) {
+            nodes {
+              topic {
+                name
+              }
             }
           }
         }
