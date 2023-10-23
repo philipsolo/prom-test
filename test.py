@@ -254,6 +254,20 @@ for repo in repositories:
 # Start the Prometheus HTTP server
 start_http_server(8000)
 
+"""query {
+  search(query: "label:bug is:collaborator:1234567890 permission:write", type: REPOSITORY) {
+    nodes {
+      ... on Repository {
+        name
+        owner {
+          login
+        }
+      }
+    }
+  }
+}
+"""
+
 
 if __name__ == '__main__':
     app.run()
