@@ -255,7 +255,7 @@ for repo in repositories:
 start_http_server(8000)
 
 """query {
-  search(query: "label:bug is:collaborator:1234567890 permission:write", type: REPOSITORY) {
+  search(query: "label:<label_name> is:collaborator:"<user_id> permission:write", type: REPOSITORY) {
     nodes {
       ... on Repository {
         name
