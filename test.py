@@ -269,47 +269,38 @@ start_http_server(8000)
 """
 
 
-import requests
-
-def get_repos_by_label_and_user_id(label_name, user_id):
-
-    query = """
-        query {
-          search(query: "label:<label_name> is:collaborator:<user_id> permission:write", type: REPOSITORY) {
-            nodes {
-              ... on Repository {
-                name
-                owner {
-                  login
-                }
-              }
+query = """
+    query ($topic: String!, $user_id: Int!) {
+      search(query: "topic:$topic is:collaborator:$user_id permission:write", type: REPOSITORY) {
+        nodes {
+          ... on Repository {
+            name
+            owner {
+              login
             }
           }
         }
-    """.format(label_name=label_name, user_id=user_id)
-
-    headers = {
-        "Authorization": "bearer YOUR_GITHUB_ACCESS_TOKEN"
+      }
     }
+"""
 
-    response = requests.post("https://api.github.com/graphql", headers=headers, data=query)
+variables = {
+    "topic": topic,
+    "user_id": user_id
+}
 
-    if response.status_code == 200:
-        data = response.json()
-        repos = data["data"]["search"]["nodes"]
-        return repos
-    else:
-        raise Exception("Failed to fetch repos: {}".format(response.status_code))
+headers = {
+    "Authorization": "bearer YOUR_GITHUB_ACCESS_TOKEN"
+}
 
-# Example usage:
+response = requests.post("https://api.github.com/graphql", headers=headers, json={"query": query, "variables": variables})
 
-label_name = "bug"
-user_id = 1234567890
-
-repos = get_repos_by_label_and_user_id(label_name, user_id)
-
-for repo in repos:
-    print(repo["name"])
+if response.status_code == 200:
+    data = response.json()
+    repos = data["data"]["search"]["nodes"]
+    return repos
+else:
+    raise Exception("Failed to fetch repos: {}".format(response.status_code))
 
 if __name__ == '__main__':
     app.run()
