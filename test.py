@@ -328,11 +328,6 @@ query = """
             }
           }
         }
-        labels(query: "%s", first: 1) {
-          nodes {
-            name
-          }
-        }
       }
       pageInfo {
         hasNextPage
@@ -341,7 +336,7 @@ query = """
     }
   }
 }
-""" % (username, label)
+""" % username
 # Define the GitHub GraphQL API URL
 api_url = "https://api.github.com/graphql"
 
@@ -366,6 +361,74 @@ if response.status_code == 200:
 else:
     print("Error: Unable to fetch repositories")
 
+# GraphQL query to fetch repositories where the user is a collaborator with a specific topic
+query = """
+{
+  user(login: "%s") {
+    repositories(first: 100) {
+      nodes {
+        name
+        owner {
+          login
+        }
+        repositoryTopics(first: 10) {
+          nodes {
+            topic {
+              name
+            }
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}
+""" % username
+
+# Define the GitHub GraphQL API URL
+api_url = "https://api.github.com/graphql"
+
+# Create a headers dictionary with your token
+headers = {
+    "Authorization": "Bearer " + token
+}
+
+repositories = []
+
+while True:
+    # Send the POST request with the query
+    response = requests.post(api_url, json={'query': query}, headers=headers)
+
+    # Check for a successful response
+    if response.status_code == 200:
+        data = response.json()["data"]["user"]["repositories"]
+        repositories += data["nodes"]
+
+        if data["pageInfo"]["hasNextPage"]:
+            # If there are more pages, update the cursor and query again
+            query = query.replace('first: 100', f'first: 100, after: "{data["pageInfo"]["endCursor"]}"')
+        else:
+            break
+    else:
+        print("Error: Unable to fetch repositories")
+        break
+
+# Filter the repositories by collaborator status and topic
+matching_repositories = [
+    repo for repo in repositories
+    if any(topic_node["topic"]["name"] == topic for topic_node in repo["repositoryTopics"]["nodes"])
+       and repo["owner"]["login"] != username
+]
+
+for repo in matching_repositories:
+    owner = repo["owner"]["login"]
+    repo_name = repo["name"]
+    print(f"Repository: {owner}/{repo_name}")
+    topics = [topic_node["topic"]["name"] for topic_node in repo["repositoryTopics"]["nodes"]]
+    print("Topics:", ', '.join(topics) if topics else "No topics")
 
 
 if __name__ == '__main__':
